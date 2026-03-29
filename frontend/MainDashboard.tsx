@@ -184,7 +184,14 @@ const MainDashboard: React.FC<{ navigation?: any }> = ({ navigation }) => {
     <TouchableOpacity
       style={styles.chatRow}
       activeOpacity={0.7}
-      onPress={() => {}}>
+      onPress={() => navigation.navigate('ChatScreen', {
+        chatId: item.id,
+        name: item.name,
+        phone: item.id, 
+        avatarInitial: item.avatarInitial,
+        avatarColor: item.avatarColor,
+        isOnline: item.isOnline
+      })}>
       <Avatar
         initial={item.avatarInitial}
         color={item.avatarColor ?? '#128C7E'}

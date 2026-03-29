@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import LandingPage from './frontend/LandingPage';
 import ProfileSetup from './frontend/ProfileSetup';
 import MainDashboard from './frontend/MainDashboard';
+import ChatScreen from './frontend/ChatScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -63,6 +64,11 @@ const App = () => {
         <Stack.Screen
           name="Home"
           component={MainDashboard}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="ChatScreen"
+          component={ChatScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

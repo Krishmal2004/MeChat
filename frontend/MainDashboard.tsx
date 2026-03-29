@@ -23,6 +23,8 @@ import {
   ScrollView,
 } from 'react-native';
 
+import ProfileSettings from './ProfileSettings';
+
 // ──────────────────────────────────────────────────────────────────────────────
 // Types & sample data
 // ──────────────────────────────────────────────────────────────────────────────
@@ -403,39 +405,61 @@ const MainDashboard: React.FC<{ navigation?: any }> = ({ navigation }) => {
       <View style={styles.responsiveContainer}>
         {/* ── Top Header ── */}
         <View style={styles.header}>
-          <TouchableOpacity style={styles.headerMenuBtn}>
-            <Text style={styles.headerMenuDot}>•••</Text>
-          </TouchableOpacity>
-
-          <Text style={styles.headerTitle}>Chats</Text>
-
-          <View style={styles.headerActions}>
-            <TouchableOpacity style={styles.headerActionBtn}>
-              <Text style={styles.headerActionIcon}>📷</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.newChatBtn}>
-              <Text style={styles.newChatIcon}>＋</Text>
+          <View style={{ width: 86, alignItems: 'flex-start' }}>
+            <TouchableOpacity style={styles.headerMenuBtn}>
+              <Text style={styles.headerMenuDot}>•••</Text>
             </TouchableOpacity>
           </View>
+
+          <Text style={styles.headerTitle}>
+            {activeTab === 'You' ? 'Profile' : activeTab}
+          </Text>
+
+          {activeTab === 'Chats' ? (
+            <View style={styles.headerActions}>
+              <TouchableOpacity style={styles.headerActionBtn}>
+                <Text style={styles.headerActionIcon}>📷</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.newChatBtn}>
+                <Text style={styles.newChatIcon}>＋</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={{ width: 86 }} />
+          )}
         </View>
 
-        {/* ── Chat List ── */}
-        <FlatList
-          data={filteredChats}
-          keyExtractor={item => item.id}
-          renderItem={renderChat}
-          ListHeaderComponent={ListHeader}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContent}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-          ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyEmoji}>💬</Text>
-              <Text style={styles.emptyText}>No chats found</Text>
-              <Text style={styles.emptySubtext}>Try a different search or filter</Text>
-            </View>
-          }
-        />
+        {/* ── Main Content Area ── */}
+        {activeTab === 'Chats' && (
+          <FlatList
+            data={filteredChats}
+            keyExtractor={item => item.id}
+            renderItem={renderChat}
+            ListHeaderComponent={ListHeader}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.listContent}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
+            ListEmptyComponent={
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyEmoji}>💬</Text>
+                <Text style={styles.emptyText}>No chats found</Text>
+                <Text style={styles.emptySubtext}>Try a different search or filter</Text>
+              </View>
+            }
+          />
+        )}
+        
+        {activeTab === 'You' && (
+          <View style={{ flex: 1 }}>
+            <ProfileSettings />
+          </View>
+        )}
+
+        {activeTab !== 'Chats' && activeTab !== 'You' && (
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ color: '#d0ede6', fontSize: 18, fontWeight: '600' }}>{activeTab} coming soon...</Text>
+          </View>
+        )}
 
         {/* ── Bottom Tab Bar ── */}
         <View style={styles.tabBar}>
@@ -473,7 +497,7 @@ const makeStyles = (width: number, height: number) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingTop: Platform.OS === 'ios' ? 56 : 36,
+      paddingTop: Platform.OS === 'web' ? 20 : Platform.OS === 'ios' ? 56 : 36,
       paddingBottom: 12,
       paddingHorizontal: 18,
       backgroundColor: '#111816',
@@ -546,7 +570,7 @@ const makeStyles = (width: number, height: number) =>
       marginTop: 12,
       marginBottom: 12,
       paddingHorizontal: 14,
-      paddingVertical: Platform.OS === 'ios' ? 10 : 4,
+      paddingVertical: Platform.OS === 'android' ? 4 : 10,
       borderWidth: 1,
       borderColor: '#1e3d33',
     },

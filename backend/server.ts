@@ -2,22 +2,21 @@ import express from 'express';
 import type { Request, Response } from 'express';
 import cors from 'cors';
 import twilio from 'twilio';
-import { PrismaClient } from '@prisma/client'; 
-import { PrismaPg } from '@prisma/adapter-pg'; 
-import pg from 'pg';                          
 import dotenv from 'dotenv';
+import { prisma } from './db.js';
+import profileSettingRoute from './profileSetting.js';
+import authRoutes from './authRoutes.js';
 
 dotenv.config();
 
 const app = express();
 
-//Prisma adapter for PostgreSQL
-const pool = new pg.Pool({connectionString: process.env.DATABASE_URL});
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({adapter});
-
 app.use(express.json());
 app.use(cors());
+
+
+app.use('/api', profileSettingRoute);
+app.use('/api', authRoutes);
 
 // Twilio configuration
 const twilioClient = twilio(
@@ -34,18 +33,13 @@ app.post('/api/auth/send-otp', async (req: Request, res: Response) => {
             .services(verifyServiceSid)
             .verifications.create({ to: phone, channel: 'sms' });
 
-        res.status(200).json({
-            success: true,
-            status: verification.status
-        });
+        res.status(200).json({ success: true, status: verification.status });
     } catch (error: any) { 
-        res.status(500).json({
-            success: false,
-            error: error.message
-        });
+        res.status(500).json({ success: false, error: error.message });
     }
 });
-//Verify OTP
+
+// Verify OTP
 app.post('/api/auth/verify-otp', async (req: Request, res: Response): Promise<void> => {
     const { phone, code } = req.body;
     try {
@@ -68,41 +62,27 @@ app.post('/api/auth/verify-otp', async (req: Request, res: Response): Promise<vo
         res.status(500).json({ success: false, error: error.message });
     }
 });
-//Profile setup route
+
+// Profile setup route
 app.post('/api/user/setup-profile', async (req: Request, res: Response): Promise<void> => {
     const { phone, displayName, bio, avatarColor, avatarUrl } = req.body;
     
     try {
         const user = await prisma.user.upsert({
             where: { phone },
-            update: {
-                displayName,
-                bio,
-                avatarColor,
-                avatarUrl
-            },
-            create: {
-                phone,
-                displayName,
-                bio,
-                avatarColor,
-                avatarUrl
-            }
+            update: { displayName, bio, avatarColor, avatarUrl },
+            create: { phone, displayName, bio, avatarColor, avatarUrl }
         });
 
-        res.status(200).json({
-            success: true,
-            user
-        });
+        res.status(200).json({ success: true, user });
     } catch (error: any) {
         console.error("Profile Setup Error: ", error);
-        res.status(500).json({
-            success: false,
-            error: error.message || 'Failed to save profile'
-        });
+        res.status(500).json({ success: false, error: error.message || 'Failed to save profile' });
     }
 });
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT as number, '0.0.0.0', () => {
     console.log(`Server is running on port ${PORT}`);
 });

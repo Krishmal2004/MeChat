@@ -256,7 +256,7 @@ const ProfileSetup: React.FC<{ navigation?: any }> = ({ navigation }) => {
       if (data.success) {
         await AsyncStorage.setItem('userToken', fullPhone);
         if (navigation) {
-          navigation.rest ({
+          navigation.reset ({
             index: 0,
             routes: [{ name: 'Home', params: { displayName, phone: fullPhone, bio } }],
           })

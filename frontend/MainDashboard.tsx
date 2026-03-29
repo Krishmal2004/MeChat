@@ -1,4 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Modal, ActivityIndicator, Alert } from 'react-native';
 import {
   FlatList,
   Platform,
@@ -13,6 +15,7 @@ import {
 } from 'react-native';
 
 import ProfileSettings from './ProfileSettings';
+
 interface ChatItem {
   id: string;
   name: string;
@@ -30,133 +33,6 @@ interface ChatItem {
   isRead?: boolean; 
 }
 
-const ALL_CHATS: ChatItem[] = [
-  {
-    id: '1',
-    name: 'M Premium Entertainment |...',
-    lastMessage: '21 photos',
-    senderName: 'Gothira',
-    time: '3/14/26',
-    pinned: true,
-    isGroup: true,
-    avatarInitial: 'M',
-    avatarColor: '#1a1a1a',
-    hasMedia: true,
-  },
-  {
-    id: '2',
-    name: 'Uni Gang',
-    lastMessage: 'Photo',
-    senderName: 'Tisula',
-    time: 'Yesterday',
-    pinned: true,
-    isGroup: true,
-    avatarInitial: 'U',
-    avatarColor: '#5C2D91',
-    hasMedia: true,
-  },
-  {
-    id: '3',
-    name: 'PromeTheus',
-    lastMessage: 'Me Saturday',
-    senderName: 'Kavindu(Kala)',
-    time: 'Yesterday',
-    pinned: true,
-    isGroup: true,
-    avatarInitial: 'P',
-    avatarColor: '#1a2a1a',
-  },
-  {
-    id: '4',
-    name: '+94 70 726 6707',
-    lastMessage: 'tikak vitara',
-    time: '12:09 AM',
-    avatarInitial: '?',
-    avatarColor: '#128C7E',
-    isRead: true,
-  },
-  {
-    id: '5',
-    name: 'Sanda New',
-    lastMessage: 'hawasa mn setiup karala UI eka hadanna gathta ekaii case eka',
-    time: '12:06 AM',
-    avatarInitial: 'S',
-    avatarColor: '#C2185B',
-    isRead: true,
-  },
-  {
-    id: '6',
-    name: 'Code Night OC',
-    lastMessage: 'Tap to see more',
-    time: '',
-    isGroup: true,
-    avatarInitial: 'C',
-    avatarColor: '#0d0d0d',
-    isMuted: true,
-  },
-  {
-    id: '7',
-    name: 'Alex Johnson',
-    lastMessage: 'Hey! Are you free tonight? 🎉',
-    time: '11:30 PM',
-    avatarInitial: 'A',
-    avatarColor: '#1565C0',
-    unread: 3,
-    isOnline: true,
-  },
-  {
-    id: '8',
-    name: 'Design Team',
-    lastMessage: 'New mockup shared',
-    senderName: 'Priya',
-    time: '10:45 PM',
-    isGroup: true,
-    avatarInitial: 'D',
-    avatarColor: '#4A148C',
-    unread: 12,
-  },
-  {
-    id: '9',
-    name: 'Mom ❤️',
-    lastMessage: 'Call me when you are free',
-    time: '9:00 PM',
-    avatarInitial: '❤',
-    avatarColor: '#B71C1C',
-    isOnline: false,
-    unread: 1,
-  },
-  {
-    id: '10',
-    name: 'React Native Devs',
-    lastMessage: 'Just pushed the fix',
-    senderName: 'Kai',
-    time: '8:22 PM',
-    isGroup: true,
-    avatarInitial: 'R',
-    avatarColor: '#006064',
-    unread: 47,
-  },
-  {
-    id: '11',
-    name: 'Sara K.',
-    lastMessage: "Let's meet at 5pm ☕",
-    time: '7:55 PM',
-    avatarInitial: 'S',
-    avatarColor: '#37474F',
-    isOnline: true,
-  },
-  {
-    id: '12',
-    name: 'Gaming Squad 🎮',
-    lastMessage: 'GGs last night!',
-    senderName: 'Zane',
-    time: '6:30 PM',
-    isGroup: true,
-    avatarInitial: 'G',
-    avatarColor: '#1B5E20',
-    unread: 5,
-  },
-];
 const Avatar: React.FC<{
   initial: string;
   color: string;
@@ -216,8 +92,79 @@ const MainDashboard: React.FC<{ navigation?: any }> = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'Updates' | 'Calls' | 'Communities' | 'Chats' | 'You'>('Chats');
 
+  // ── NEW: Real Chat Data State ──
+  const [chats, setChats] = useState<ChatItem[]>([]);
+  const [isLoadingChats, setIsLoadingChats] = useState(true);
+
+  // Modal State for Sending Messages
+  const [isNewChatModalVisible, setNewChatModalVisible] = useState(false);
+  const [newChatPhone, setNewChatPhone] = useState('');
+  const [newChatMessage, setNewChatMessage] = useState('');
+  const [isSending, setIsSending] = useState(false);
+
+  const fetchChats = async () => {
+    try {
+      const myPhone = await AsyncStorage.getItem('userToken');
+      if (!myPhone) return;
+
+      const response = await fetch(`http://10.0.2.2:3000/api/messages/chats/${encodeURIComponent(myPhone)}`);
+      const data = await response.json();
+
+      if (data.success) {
+        setChats(data.chats);
+      }
+    } catch (error) {
+      console.error('Failed to fetch chats', error);
+    } finally {
+      setIsLoadingChats(false);
+    }
+  };
+
+  // Fetch chats on initial load
+  useEffect(() => {
+    fetchChats();
+  }, []);
+
+  const handleSendMessage = async () => {
+    if (!newChatPhone.trim() || !newChatMessage.trim()) {
+      Alert.alert('Error', 'Please enter both a phone number and a message.');
+      return;
+    }
+
+    setIsSending(true);
+    try {
+        const myPhone = await AsyncStorage.getItem('userToken'); 
+        
+        const response = await fetch(`http://10.0.2.2:3000/api/messages/send`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                senderPhone: myPhone,
+                receiverPhone: newChatPhone, 
+                content: newChatMessage
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            setNewChatModalVisible(false);
+            setNewChatPhone('');
+            setNewChatMessage('');
+            fetchChats(); 
+        } else {
+            Alert.alert('Error', data.error || 'Failed to send message.');
+        }
+    } catch (error) {
+        console.error('Send message error:', error);
+        Alert.alert('Error', 'Network error. Please try again.');
+    } finally {
+        setIsSending(false);
+    }
+  };
+
   const filteredChats = useMemo(() => {
-    let list = ALL_CHATS;
+    let list = chats; 
     if (searchQuery.trim()) {
       list = list.filter(
         c =>
@@ -229,26 +176,22 @@ const MainDashboard: React.FC<{ navigation?: any }> = ({ navigation }) => {
     else if (activeFilter === 'Groups') { list = list.filter(c => c.isGroup); }
     else if (activeFilter === 'Favourites') { list = list.filter(c => c.pinned); }
     return list;
-  }, [activeFilter, searchQuery]);
+  }, [activeFilter, searchQuery, chats]);
 
-  const totalUnread = ALL_CHATS.reduce((s, c) => s + (c.unread ?? 0), 0);
+  const totalUnread = chats.reduce((s, c) => s + (c.unread ?? 0), 0);
 
   const renderChat = ({ item }: { item: ChatItem }) => (
     <TouchableOpacity
       style={styles.chatRow}
       activeOpacity={0.7}
       onPress={() => {}}>
-      {/* Avatar */}
       <Avatar
         initial={item.avatarInitial}
         color={item.avatarColor ?? '#128C7E'}
         size={54}
         isOnline={item.isOnline}
       />
-
-      {/* Content */}
       <View style={styles.chatContent}>
-        {/* Row 1: name + time */}
         <View style={styles.chatTopRow}>
           <Text style={styles.chatName} numberOfLines={1}>
             {item.isMuted ? '🔇 ' : ''}{item.name}
@@ -258,25 +201,20 @@ const MainDashboard: React.FC<{ navigation?: any }> = ({ navigation }) => {
           </Text>
         </View>
 
-        {/* Row 2: preview + badges */}
         <View style={styles.chatBottomRow}>
           <View style={styles.previewRow}>
-            {/* sender name for groups */}
             {item.senderName && (
               <Text style={styles.senderName}>{item.senderName}: </Text>
             )}
-            {/* read tick for sent messages */}
             {!item.senderName && !item.unread && item.isRead !== undefined && (
               <ReadTick isRead={item.isRead} />
             )}
-            {/* media icon */}
             {item.hasMedia && <Text style={styles.mediaIcon}>📷 </Text>}
             <Text style={styles.lastMessage} numberOfLines={2}>
               {item.lastMessage}
             </Text>
           </View>
 
-          {/* Right side: pin / unread badge */}
           <View style={styles.chatBadgeCol}>
             {item.unread && item.unread > 0 ? (
               <View style={[styles.unreadBadge, item.isMuted && styles.unreadBadgeMuted]}>
@@ -295,7 +233,6 @@ const MainDashboard: React.FC<{ navigation?: any }> = ({ navigation }) => {
 
   const ListHeader = () => (
     <>
-      {/* Search */}
       <View style={styles.searchWrapper}>
         <Text style={styles.searchIconText}>🔍</Text>
         <TextInput
@@ -312,11 +249,7 @@ const MainDashboard: React.FC<{ navigation?: any }> = ({ navigation }) => {
         ) : null}
       </View>
 
-      {/* Filter chips */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filtersRow}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filtersRow}>
         {(['All', 'Unread', 'Favourites', 'Groups'] as const).map(f => (
           <TouchableOpacity
             key={f}
@@ -325,37 +258,27 @@ const MainDashboard: React.FC<{ navigation?: any }> = ({ navigation }) => {
             <Text style={[styles.filterText, activeFilter === f && styles.filterTextActive]}>
               {f}
               {f === 'Unread' && totalUnread > 0 ? ` ${totalUnread}` : ''}
-              {f === 'Groups' ? ` ${ALL_CHATS.filter(c => c.isGroup).length}` : ''}
+              {f === 'Groups' ? ` ${chats.filter(c => c.isGroup).length}` : ''}
             </Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
 
-      {/* Archived */}
       <TouchableOpacity style={styles.archivedRow} activeOpacity={0.7}>
         <Text style={styles.archiveIcon}>🗂</Text>
         <Text style={styles.archivedLabel}>Archived</Text>
-        <Text style={styles.archivedCount}>10</Text>
+        <Text style={styles.archivedCount}>0</Text>
         <Text style={styles.archivedChevron}>›</Text>
       </TouchableOpacity>
 
-      {/* Divider */}
       <View style={styles.divider} />
     </>
   );
 
-  // ── Bottom tab item
-  const TabItem: React.FC<{
-    label: typeof activeTab;
-    icon: string;
-    badge?: number;
-  }> = ({ label, icon, badge }) => {
+  const TabItem: React.FC<{ label: typeof activeTab; icon: string; badge?: number; }> = ({ label, icon, badge }) => {
     const active = activeTab === label;
     return (
-      <TouchableOpacity
-        style={styles.tabItem}
-        onPress={() => setActiveTab(label)}
-        activeOpacity={0.7}>
+      <TouchableOpacity style={styles.tabItem} onPress={() => setActiveTab(label)} activeOpacity={0.7}>
         <View>
           <Text style={[styles.tabIcon, active && styles.tabIconActive]}>{icon}</Text>
           {badge && badge > 0 ? (
@@ -373,9 +296,7 @@ const MainDashboard: React.FC<{ navigation?: any }> = ({ navigation }) => {
     <View style={styles.root}>
       <StatusBar barStyle="light-content" backgroundColor="#111816" />
 
-      {/* Responsive Wrapper to contain UI nicely on Tablets/Web */}
       <View style={styles.responsiveContainer}>
-        {/* ── Top Header ── */}
         <View style={styles.header}>
           <View style={{ width: 86, alignItems: 'flex-start' }}>
             <TouchableOpacity style={styles.headerMenuBtn}>
@@ -392,7 +313,8 @@ const MainDashboard: React.FC<{ navigation?: any }> = ({ navigation }) => {
               <TouchableOpacity style={styles.headerActionBtn}>
                 <Text style={styles.headerActionIcon}>📷</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.newChatBtn}>
+              
+              <TouchableOpacity style={styles.newChatBtn} onPress={() => setNewChatModalVisible(true)}>
                 <Text style={styles.newChatIcon}>＋</Text>
               </TouchableOpacity>
             </View>
@@ -401,24 +323,29 @@ const MainDashboard: React.FC<{ navigation?: any }> = ({ navigation }) => {
           )}
         </View>
 
-        {/* ── Main Content Area ── */}
         {activeTab === 'Chats' && (
-          <FlatList
-            data={filteredChats}
-            keyExtractor={item => item.id}
-            renderItem={renderChat}
-            ListHeaderComponent={ListHeader}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.listContent}
-            ItemSeparatorComponent={() => <View style={styles.separator} />}
-            ListEmptyComponent={
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyEmoji}>💬</Text>
-                <Text style={styles.emptyText}>No chats found</Text>
-                <Text style={styles.emptySubtext}>Try a different search or filter</Text>
-              </View>
-            }
-          />
+          isLoadingChats ? (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+              <ActivityIndicator size="large" color="#25D366" />
+            </View>
+          ) : (
+            <FlatList
+              data={filteredChats}
+              keyExtractor={item => item.id}
+              renderItem={renderChat}
+              ListHeaderComponent={ListHeader}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.listContent}
+              ItemSeparatorComponent={() => <View style={styles.separator} />}
+              ListEmptyComponent={
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyEmoji}>💬</Text>
+                  <Text style={styles.emptyText}>No chats yet</Text>
+                  <Text style={styles.emptySubtext}>Tap the + button to start a conversation</Text>
+                </View>
+              }
+            />
+          )
         )}
         
         {activeTab === 'You' && (
@@ -433,7 +360,6 @@ const MainDashboard: React.FC<{ navigation?: any }> = ({ navigation }) => {
           </View>
         )}
 
-        {/* ── Bottom Tab Bar ── */}
         <View style={styles.tabBar}>
           <TabItem label="Updates" icon="🔔" />
           <TabItem label="Calls" icon="📞" />
@@ -441,6 +367,52 @@ const MainDashboard: React.FC<{ navigation?: any }> = ({ navigation }) => {
           <TabItem label="Chats" icon="💬" badge={totalUnread} />
           <TabItem label="You" icon="🧑" />
         </View>
+
+        <Modal visible={isNewChatModalVisible} animationType="slide" transparent>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', padding: 20 }}>
+            <View style={{ backgroundColor: '#111816', padding: 24, borderRadius: 16, borderWidth: 1, borderColor: '#1a2e25' }}>
+              <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700', marginBottom: 20 }}>New Message</Text>
+              
+              <Text style={{ color: '#507a68', fontSize: 12, marginBottom: 8, fontWeight: '700' }}>PHONE NUMBER</Text>
+              <TextInput
+                style={{ backgroundColor: '#0a0f0d', borderWidth: 1, borderColor: '#1a2e25', borderRadius: 10, color: '#fff', padding: 12, marginBottom: 16 }}
+                placeholder="+94 77 123 4567"
+                placeholderTextColor="#3d6055"
+                keyboardType="phone-pad"
+                value={newChatPhone}
+                onChangeText={setNewChatPhone}
+              />
+
+              <Text style={{ color: '#507a68', fontSize: 12, marginBottom: 8, fontWeight: '700' }}>MESSAGE</Text>
+              <TextInput
+                style={{ backgroundColor: '#0a0f0d', borderWidth: 1, borderColor: '#1a2e25', borderRadius: 10, color: '#fff', padding: 12, marginBottom: 24, minHeight: 80, textAlignVertical: 'top' }}
+                placeholder="Say hello..."
+                placeholderTextColor="#3d6055"
+                multiline
+                value={newChatMessage}
+                onChangeText={setNewChatMessage}
+              />
+
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <TouchableOpacity 
+                  style={{ flex: 1, padding: 14, borderRadius: 10, backgroundColor: '#1a2e25', alignItems: 'center' }} 
+                  onPress={() => setNewChatModalVisible(false)}
+                >
+                  <Text style={{ color: '#7aada0', fontWeight: '600', fontSize: 16 }}>Cancel</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={{ flex: 1, padding: 14, borderRadius: 10, backgroundColor: '#25D366', alignItems: 'center' }} 
+                  onPress={handleSendMessage}
+                  disabled={isSending}
+                >
+                  {isSending ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Send</Text>}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
       </View>
     </View>
   );
@@ -460,8 +432,6 @@ const makeStyles = (width: number, height: number) =>
       backgroundColor: '#0d110f',
       position: 'relative',
     },
-
-    // Header
     header: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -473,319 +443,92 @@ const makeStyles = (width: number, height: number) =>
       borderBottomWidth: 1,
       borderBottomColor: '#1a2e25',
     },
-    headerMenuBtn: {
-      padding: 4,
-    },
-    headerMenuDot: {
-      color: '#a0c4b8',
-      fontSize: 14,
-      letterSpacing: 2,
-      fontWeight: '700',
-    },
-    headerTitle: {
-      color: '#ffffff',
-      fontSize: 22,
-      fontWeight: '800',
-      letterSpacing: -0.3,
-    },
-    headerActions: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 10,
-    },
+    headerMenuBtn: { padding: 4 },
+    headerMenuDot: { color: '#a0c4b8', fontSize: 14, letterSpacing: 2, fontWeight: '700' },
+    headerTitle: { color: '#ffffff', fontSize: 22, fontWeight: '800', letterSpacing: -0.3 },
+    headerActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
     headerActionBtn: {
-      width: 38,
-      height: 38,
-      borderRadius: 19,
-      backgroundColor: '#1a2e25',
-      alignItems: 'center',
-      justifyContent: 'center',
+      width: 38, height: 38, borderRadius: 19, backgroundColor: '#1a2e25',
+      alignItems: 'center', justifyContent: 'center',
     },
-    headerActionIcon: {
-      fontSize: 18,
-    },
+    headerActionIcon: { fontSize: 18 },
     newChatBtn: {
-      width: 38,
-      height: 38,
-      borderRadius: 19,
-      backgroundColor: '#25D366',
-      alignItems: 'center',
-      justifyContent: 'center',
-      shadowColor: '#25D366',
-      shadowOffset: { width: 0, height: 3 },
-      shadowOpacity: 0.5,
-      shadowRadius: 6,
-      elevation: 6,
+      width: 38, height: 38, borderRadius: 19, backgroundColor: '#25D366',
+      alignItems: 'center', justifyContent: 'center',
+      shadowColor: '#25D366', shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.5, shadowRadius: 6, elevation: 6,
     },
-    newChatIcon: {
-      color: '#fff',
-      fontSize: 22,
-      fontWeight: '300',
-      lineHeight: 24,
-    },
-
-    // List container
-    listContent: {
-      paddingBottom: 90,
-    },
-
-    // Search
+    newChatIcon: { color: '#fff', fontSize: 22, fontWeight: '300', lineHeight: 24 },
+    listContent: { paddingBottom: 90 },
     searchWrapper: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: '#1a2922',
-      borderRadius: 26,
-      marginHorizontal: 14,
-      marginTop: 12,
-      marginBottom: 12,
-      paddingHorizontal: 14,
-      paddingVertical: Platform.OS === 'android' ? 4 : 10,
-      borderWidth: 1,
-      borderColor: '#1e3d33',
+      flexDirection: 'row', alignItems: 'center', backgroundColor: '#1a2922',
+      borderRadius: 26, marginHorizontal: 14, marginTop: 12, marginBottom: 12,
+      paddingHorizontal: 14, paddingVertical: Platform.OS === 'android' ? 4 : 10,
+      borderWidth: 1, borderColor: '#1e3d33',
     },
-    searchIconText: {
-      fontSize: 16,
-      marginRight: 8,
-    },
-    searchInput: {
-      flex: 1,
-      color: '#d0ede6',
-      fontSize: 15,
-    },
-    clearSearch: {
-      color: '#507a68',
-      fontSize: 16,
-      paddingLeft: 6,
-    },
-
-    // Filter chips
-    filtersRow: {
-      paddingHorizontal: 14,
-      paddingBottom: 12,
-      gap: 8,
-    },
+    searchIconText: { fontSize: 16, marginRight: 8 },
+    searchInput: { flex: 1, color: '#d0ede6', fontSize: 15 },
+    clearSearch: { color: '#507a68', fontSize: 16, paddingLeft: 6 },
+    filtersRow: { paddingHorizontal: 14, paddingBottom: 12, gap: 8 },
     filterChip: {
-      paddingHorizontal: 16,
-      paddingVertical: 7,
-      borderRadius: 20,
-      backgroundColor: '#1a2922',
-      borderWidth: 1,
-      borderColor: '#1e3d33',
+      paddingHorizontal: 16, paddingVertical: 7, borderRadius: 20,
+      backgroundColor: '#1a2922', borderWidth: 1, borderColor: '#1e3d33',
     },
-    filterChipActive: {
-      backgroundColor: '#25D366',
-      borderColor: '#25D366',
-    },
-    filterText: {
-      color: '#7aada0',
-      fontSize: 13,
-      fontWeight: '600',
-    },
-    filterTextActive: {
-      color: '#fff',
-    },
-
-    // Archived row
+    filterChipActive: { backgroundColor: '#25D366', borderColor: '#25D366' },
+    filterText: { color: '#7aada0', fontSize: 13, fontWeight: '600' },
+    filterTextActive: { color: '#fff' },
     archivedRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 18,
-      paddingVertical: 12,
-      backgroundColor: '#0d110f',
+      flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18,
+      paddingVertical: 12, backgroundColor: '#0d110f',
     },
-    archiveIcon: {
-      fontSize: 18,
-      marginRight: 14,
-    },
-    archivedLabel: {
-      flex: 1,
-      color: '#d0ede6',
-      fontSize: 16,
-      fontWeight: '500',
-    },
-    archivedCount: {
-      color: '#507a68',
-      fontSize: 14,
-      marginRight: 6,
-    },
-    archivedChevron: {
-      color: '#507a68',
-      fontSize: 20,
-      fontWeight: '300',
-    },
-
-    divider: {
-      height: 1,
-      backgroundColor: '#151f1a',
-      marginHorizontal: 0,
-      marginBottom: 4,
-    },
-
-    // Chat row
+    archiveIcon: { fontSize: 18, marginRight: 14 },
+    archivedLabel: { flex: 1, color: '#d0ede6', fontSize: 16, fontWeight: '500' },
+    archivedCount: { color: '#507a68', fontSize: 14, marginRight: 6 },
+    archivedChevron: { color: '#507a68', fontSize: 20, fontWeight: '300' },
+    divider: { height: 1, backgroundColor: '#151f1a', marginHorizontal: 0, marginBottom: 4 },
     chatRow: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      paddingHorizontal: 16,
-      paddingVertical: 11,
-      backgroundColor: '#0d110f',
+      flexDirection: 'row', alignItems: 'flex-start', paddingHorizontal: 16,
+      paddingVertical: 11, backgroundColor: '#0d110f',
     },
-    chatContent: {
-      flex: 1,
-      marginLeft: 13,
-    },
-    chatTopRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 4,
-    },
-    chatName: {
-      flex: 1,
-      color: '#ffffff',
-      fontSize: 16,
-      fontWeight: '700',
-      letterSpacing: -0.2,
-      marginRight: 8,
-    },
-    chatTime: {
-      color: '#507a68',
-      fontSize: 12,
-      flexShrink: 0,
-    },
-    chatTimeUnread: {
-      color: '#25D366',
-      fontWeight: '700',
-    },
-    chatBottomRow: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      justifyContent: 'space-between',
-    },
-    previewRow: {
-      flex: 1,
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      alignItems: 'center',
-      marginRight: 8,
-    },
-    senderName: {
-      color: '#7aada0',
-      fontSize: 13,
-      fontWeight: '600',
-    },
-    mediaIcon: {
-      fontSize: 13,
-    },
-    lastMessage: {
-      color: '#507a68',
-      fontSize: 13,
-      flexShrink: 1,
-      lineHeight: 19,
-    },
-    chatBadgeCol: {
-      alignItems: 'flex-end',
-      justifyContent: 'center',
-      minWidth: 28,
-    },
+    chatContent: { flex: 1, marginLeft: 13 },
+    chatTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+    chatName: { flex: 1, color: '#ffffff', fontSize: 16, fontWeight: '700', letterSpacing: -0.2, marginRight: 8 },
+    chatTime: { color: '#507a68', fontSize: 12, flexShrink: 0 },
+    chatTimeUnread: { color: '#25D366', fontWeight: '700' },
+    chatBottomRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
+    previewRow: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginRight: 8 },
+    senderName: { color: '#7aada0', fontSize: 13, fontWeight: '600' },
+    mediaIcon: { fontSize: 13 },
+    lastMessage: { color: '#507a68', fontSize: 13, flexShrink: 1, lineHeight: 19 },
+    chatBadgeCol: { alignItems: 'flex-end', justifyContent: 'center', minWidth: 28 },
     unreadBadge: {
-      backgroundColor: '#25D366',
-      borderRadius: 12,
-      minWidth: 22,
-      height: 22,
-      paddingHorizontal: 5,
-      alignItems: 'center',
-      justifyContent: 'center',
+      backgroundColor: '#25D366', borderRadius: 12, minWidth: 22, height: 22,
+      paddingHorizontal: 5, alignItems: 'center', justifyContent: 'center',
     },
-    unreadBadgeMuted: {
-      backgroundColor: '#2a4a3a',
-    },
-    unreadText: {
-      color: '#fff',
-      fontSize: 11,
-      fontWeight: '800',
-    },
-    pinIcon: {
-      fontSize: 13,
-      marginTop: 2,
-    },
-
-    separator: {
-      height: 1,
-      backgroundColor: '#13201a',
-      marginLeft: 83,
-    },
-
-    // Empty
-    emptyState: {
-      alignItems: 'center',
-      paddingTop: height * 0.12,
-    },
-    emptyEmoji: {
-      fontSize: 52,
-      marginBottom: 14,
-    },
-    emptyText: {
-      color: '#d0ede6',
-      fontSize: 18,
-      fontWeight: '700',
-      marginBottom: 6,
-    },
-    emptySubtext: {
-      color: '#507a68',
-      fontSize: 14,
-    },
-
-    // Bottom tab bar
+    unreadBadgeMuted: { backgroundColor: '#2a4a3a' },
+    unreadText: { color: '#fff', fontSize: 11, fontWeight: '800' },
+    pinIcon: { fontSize: 13, marginTop: 2 },
+    separator: { height: 1, backgroundColor: '#13201a', marginLeft: 83 },
+    emptyState: { alignItems: 'center', paddingTop: height * 0.12 },
+    emptyEmoji: { fontSize: 52, marginBottom: 14 },
+    emptyText: { color: '#d0ede6', fontSize: 18, fontWeight: '700', marginBottom: 6 },
+    emptySubtext: { color: '#507a68', fontSize: 14 },
     tabBar: {
-      position: 'absolute',
-      bottom: 0,
-      width: '100%',
-      flexDirection: 'row',
-      backgroundColor: '#111816',
-      borderTopWidth: 1,
-      borderTopColor: '#1a2e25',
-      paddingTop: 10,
-      paddingBottom: Platform.OS === 'ios' ? 28 : 14,
-      paddingHorizontal: 6,
+      position: 'absolute', bottom: 0, width: '100%', flexDirection: 'row',
+      backgroundColor: '#111816', borderTopWidth: 1, borderTopColor: '#1a2e25',
+      paddingTop: 10, paddingBottom: Platform.OS === 'ios' ? 28 : 14, paddingHorizontal: 6,
     },
-    tabItem: {
-      flex: 1,
-      alignItems: 'center',
-      gap: 3,
-    },
-    tabIcon: {
-      fontSize: 22,
-      opacity: 0.45,
-    },
-    tabIconActive: {
-      opacity: 1,
-    },
-    tabLabel: {
-      color: '#507a68',
-      fontSize: 10,
-      fontWeight: '600',
-      letterSpacing: 0.2,
-    },
-    tabLabelActive: {
-      color: '#25D366',
-    },
+    tabItem: { flex: 1, alignItems: 'center', gap: 3 },
+    tabIcon: { fontSize: 22, opacity: 0.45 },
+    tabIconActive: { opacity: 1 },
+    tabLabel: { color: '#507a68', fontSize: 10, fontWeight: '600', letterSpacing: 0.2 },
+    tabLabelActive: { color: '#25D366' },
     tabBadge: {
-      position: 'absolute',
-      top: -4,
-      right: -10,
-      backgroundColor: '#25D366',
-      borderRadius: 10,
-      minWidth: 20,
-      height: 20,
-      paddingHorizontal: 4,
-      alignItems: 'center',
-      justifyContent: 'center',
+      position: 'absolute', top: -4, right: -10, backgroundColor: '#25D366',
+      borderRadius: 10, minWidth: 20, height: 20, paddingHorizontal: 4,
+      alignItems: 'center', justifyContent: 'center',
     },
-    tabBadgeText: {
-      color: '#fff',
-      fontSize: 10,
-      fontWeight: '800',
-    },
+    tabBadgeText: { color: '#fff', fontSize: 10, fontWeight: '800' },
   });
 
 export default MainDashboard;

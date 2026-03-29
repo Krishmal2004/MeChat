@@ -8,12 +8,28 @@ datasource db {
 }
 
 model User {
-  id          String   @id @default(uuid())
-  phone       String   @unique
-  displayName String?
-  bio         String?
-  avatarColor String?
-  avatarUrl   String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id               Int       @id @default(autoincrement())
+  phone            String    @unique
+  displayName      String?
+  bio              String?
+  avatarColor      String?
+  avatarUrl        String?
+  
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+}
+
+model Message {
+  id             Int      @id @default(autoincrement())
+  content        String
+  createdAt      DateTime @default(now())
+  isRead         Boolean  @default(false)
+
+  // Link to the sender
+  senderPhone    String
+  sender         User     @relation("SentMessages", fields: [senderPhone], references: [phone])
+
+  // Link to the receiver
+  receiverPhone  String
+  receiver       User     @relation("ReceivedMessages", fields: [receiverPhone], references: [phone])
 }

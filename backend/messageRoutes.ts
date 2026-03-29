@@ -80,5 +80,24 @@ router.get('/chats/:phone', async (req: Request, res: Response): Promise<void> =
         res.status(500).json({ success: false, error: error.message || 'Failed to fetch chats' });
     }
 });
-
+// Get chat in screen
+router.get('/:sender/:receiver', async (req: Request, res: Response): Promise<void> => {
+    const { sender, receiver } = req.params;
+    try {
+        const messages = await prisma.message.findMany({
+            where: {
+                OR: [
+                    { senderPhone: sender, receiverPhone: receiver },
+                    { senderPhone: receiver, receiverPhone: sender }]
+            },
+            orderBy: {
+                createdAt: 'asc'
+            }
+        });
+        res.status(200).json({ success: true, messages });
+    } catch (error: any) {
+        console.error("Fetch Messages Error: ", error);
+        res.status(500).json({ success: false, error: error.message || 'Failed to fetch messages' });
+    }
+});
 export default router;

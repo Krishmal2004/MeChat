@@ -7,6 +7,7 @@
  * Step 4 : Bio + profile picture
  */
 import React, { useRef, useState, useMemo } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   Alert,
   Animated,
@@ -24,7 +25,15 @@ import {
   FlatList,
   StatusBar,
   useWindowDimensions,
+  ActivityIndicator,
 } from 'react-native';
+
+// ──────────────────────────────────────────────────────────────────────────────
+// API Configuration
+// ──────────────────────────────────────────────────────────────────────────────
+// If testing on Android Emulator, use 10.0.2.2. For iOS/Web use localhost.
+// For physical device, use your computer's local IP address (e.g. 192.168.1.10)
+const API_BASE_URL = 'http://10.0.2.2:3000/api';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Country data
@@ -78,7 +87,7 @@ const COUNTRIES: Country[] = [
   { name: 'Pakistan', flag: '🇵🇰', code: '+92', iso: 'PK' },
   { name: 'Philippines', flag: '🇵🇭', code: '+63', iso: 'PH' },
   { name: 'Poland', flag: '🇵🇱', code: '+48', iso: 'PL' },
-  { name: 'Portugal', flag: '��🇹', code: '+351', iso: 'PT' },
+  { name: 'Portugal', flag: '🇵🇹', code: '+351', iso: 'PT' },
   { name: 'Qatar', flag: '🇶🇦', code: '+974', iso: 'QA' },
   { name: 'Romania', flag: '🇷🇴', code: '+40', iso: 'RO' },
   { name: 'Russia', flag: '🇷🇺', code: '+7', iso: 'RU' },
@@ -100,7 +109,7 @@ const COUNTRIES: Country[] = [
   { name: 'Venezuela', flag: '🇻🇪', code: '+58', iso: 'VE' },
   { name: 'Vietnam', flag: '🇻🇳', code: '+84', iso: 'VN' },
   { name: 'Yemen', flag: '🇾🇪', code: '+967', iso: 'YE' },
-  { name: 'Zimbabwe', flag: '����🇼', code: '+263', iso: 'ZW' },
+  { name: 'Zimbabwe', flag: '🇿🇼', code: '+263', iso: 'ZW' },
 ];
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -113,6 +122,9 @@ const ProfileSetup: React.FC<{ navigation?: any }> = ({ navigation }) => {
 
   const [step, setStep] = useState(0);
   const slideAnim = useRef(new Animated.Value(0)).current;
+  
+  // Loading state for API calls
+  const [isLoading, setIsLoading] = useState(false);
 
   const goToStep = (next: number) => {
     Animated.sequence([
@@ -175,6 +187,93 @@ const ProfileSetup: React.FC<{ navigation?: any }> = ({ navigation }) => {
   );
 
   // ──────────────────────────────────────────────────────────────────────────
+  // API Methods
+  // ─────────────────────────────────────────────────────────────────────────��
+  
+  const handleSendOtp = async () => {
+    setIsLoading(true);
+    const fullPhone = `${selectedCountry.code}${phone}`;
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/send-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: fullPhone }),
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        goToStep(1);
+      } else {
+        Alert.alert('Error', data.error || 'Failed to send verification code.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Network error. Please check your connection.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyOtpApi = async (code: string) => {
+    setIsLoading(true);
+    const fullPhone = `${selectedCountry.code}${phone}`;
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: fullPhone, code }),
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        setOtpVerified(true);
+        setTimeout(() => goToStep(2), 600);
+      } else {
+        setOtpError(data.error || 'Invalid code. Please try again.');
+      }
+    } catch (error) {
+      setOtpError('Network error. Please check your connection.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleFinish = async () => {
+    setIsLoading(true);
+    const fullPhone = `${selectedCountry.code}${phone}`;
+    try {
+      const response = await fetch(`${API_BASE_URL}/user/setup-profile`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: fullPhone,
+          displayName,
+          bio,
+          avatarColor,
+        }),
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        await AsyncStorage.setItem('userToken', fullPhone);
+        if (navigation) {
+          navigation.rest ({
+            index: 0,
+            routes: [{ name: 'Home', params: { displayName, phone: fullPhone, bio } }],
+          })
+        } else {
+          Alert.alert('🎉 Welcome to MeChat!', `Hello, ${displayName}!`);
+        }
+      } else {
+        Alert.alert('Error', data.error || 'Failed to save profile.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Network error. Please check your connection.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ──────────────────────────────────────────────────────────────────────────
   // Render Steps
   // ──────────────────────────────────────────────────────────────────────────
   const renderStep1 = () => (
@@ -218,11 +317,15 @@ const ProfileSetup: React.FC<{ navigation?: any }> = ({ navigation }) => {
       </View>
 
       <TouchableOpacity
-        style={[styles.nextBtn, !phone.trim() && styles.nextBtnDisabled]}
-        disabled={!phone.trim()}
-        onPress={() => goToStep(1)}
+        style={[styles.nextBtn, (!phone.trim() || isLoading) && styles.nextBtnDisabled]}
+        disabled={!phone.trim() || isLoading}
+        onPress={handleSendOtp}
         activeOpacity={0.85}>
-        <Text style={styles.nextBtnText}>Next →</Text>
+        {isLoading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.nextBtnText}>Next →</Text>
+        )}
       </TouchableOpacity>
     </View>
   );
@@ -304,7 +407,7 @@ const ProfileSetup: React.FC<{ navigation?: any }> = ({ navigation }) => {
 
     const filled = text.length > 1 ? newOtp : newOtp;
     if (filled.every(d => d !== '') && filled.join('').length === OTP_LENGTH) {
-      handleVerifyOtp(filled.join(''));
+      handleVerifyOtpApi(filled.join(''));
     }
   };
 
@@ -315,17 +418,6 @@ const ProfileSetup: React.FC<{ navigation?: any }> = ({ navigation }) => {
       setOtp(newOtp);
       otpRefs.current[index - 1]?.focus();
     }
-  };
-
-  const handleVerifyOtp = (code: string) => {
-    setTimeout(() => {
-      if (code.length === OTP_LENGTH) {
-        setOtpVerified(true);
-        setTimeout(() => goToStep(2), 600);
-      } else {
-        setOtpError('Invalid code. Please try again.');
-      }
-    }, 400);
   };
 
   const renderStep2 = () => (
@@ -364,16 +456,20 @@ const ProfileSetup: React.FC<{ navigation?: any }> = ({ navigation }) => {
       {otpError ? <Text style={styles.errorText}>{otpError}</Text> : null}
       {otpVerified ? <Text style={styles.successText}>✓ Verified! Redirecting…</Text> : null}
 
-      <TouchableOpacity onPress={() => Alert.alert('MeChat', 'OTP resent!')} style={styles.resendBtn}>
+      <TouchableOpacity onPress={handleSendOtp} style={styles.resendBtn}>
         <Text style={styles.resendText}>Didn't receive a code? <Text style={styles.resendLink}>Resend</Text></Text>
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={[styles.nextBtn, otp.some(d => !d) && styles.nextBtnDisabled]}
-        disabled={otp.some(d => !d)}
-        onPress={() => handleVerifyOtp(otp.join(''))}
+        style={[styles.nextBtn, (otp.some(d => !d) || isLoading) && styles.nextBtnDisabled]}
+        disabled={otp.some(d => !d) || isLoading}
+        onPress={() => handleVerifyOtpApi(otp.join(''))}
         activeOpacity={0.85}>
-        <Text style={styles.nextBtnText}>Verify →</Text>
+        {isLoading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.nextBtnText}>Verify →</Text>
+        )}
       </TouchableOpacity>
     </View>
   );
@@ -410,18 +506,6 @@ const ProfileSetup: React.FC<{ navigation?: any }> = ({ navigation }) => {
 
   const AVATAR_COLORS = ['#25D366', '#128C7E', '#075E54', '#34B7F1', '#9C27B0', '#FF5722'];
   const [avatarColor, setAvatarColor] = useState(AVATAR_COLORS[0]);
-
-  const handleFinish = () => {
-    if (navigation) {
-      navigation.navigate('Home', {
-        displayName,
-        phone: `${selectedCountry.code}${phone}`,
-        bio,
-      });
-    } else {
-      Alert.alert('🎉 Welcome to MeChat!', `Hello, ${displayName}!`);
-    }
-  };
 
   const renderStep4 = () => (
     <ScrollView
@@ -482,11 +566,19 @@ const ProfileSetup: React.FC<{ navigation?: any }> = ({ navigation }) => {
       />
       <Text style={styles.charCount}>{bio.length}/120</Text>
 
-      <TouchableOpacity style={styles.nextBtn} onPress={handleFinish} activeOpacity={0.85}>
-        <Text style={styles.nextBtnText}>🚀 Let's Go!</Text>
+      <TouchableOpacity 
+        style={[styles.nextBtn, isLoading && styles.nextBtnDisabled]} 
+        onPress={handleFinish} 
+        disabled={isLoading}
+        activeOpacity={0.85}>
+        {isLoading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.nextBtnText}>🚀 Let's Go!</Text>
+        )}
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => goToStep(2)} style={styles.backBtn}>
+      <TouchableOpacity onPress={() => goToStep(2)} style={styles.backBtn} disabled={isLoading}>
         <Text style={styles.backText}>← Back</Text>
       </TouchableOpacity>
     </ScrollView>
@@ -757,12 +849,14 @@ const makeStyles = (width: number, height: number) => {
       borderRadius: 30,
       paddingVertical: 16,
       alignItems: 'center',
+      justifyContent: 'center',
       shadowColor: '#25D366',
       shadowOffset: { width: 0, height: 6 },
       shadowOpacity: 0.4,
       shadowRadius: 12,
       elevation: 8,
       marginBottom: 16,
+      height: 56, // Added fixed height to stop the button from shifting during the loading spinner
     },
     nextBtnDisabled: {
       backgroundColor: '#1a4033',

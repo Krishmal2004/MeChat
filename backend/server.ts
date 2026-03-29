@@ -19,8 +19,6 @@ const prisma = new PrismaClient({adapter});
 app.use(express.json());
 app.use(cors());
 
-
-
 // Twilio configuration
 const twilioClient = twilio(
     process.env.TWILIO_ACCOUNT_SID!,
@@ -47,7 +45,63 @@ app.post('/api/auth/send-otp', async (req: Request, res: Response) => {
         });
     }
 });
+//Verify OTP
+app.post('/api/auth/verify-otp', async (req: Request, res: Response): Promise<void> => {
+    const { phone, code } = req.body;
+    try {
+        const verificationCheck = await twilioClient.verify.v2
+            .services(verifyServiceSid)
+            .verificationChecks.create({ to: phone, code });
 
+        if (verificationCheck.status === 'approved') {
+            const existingUser = await prisma.user.findUnique({ where: { phone } });
+            
+            res.status(200).json({ 
+                success: true, 
+                isNewUser: !existingUser,
+                user: existingUser
+            });
+        } else {
+            res.status(400).json({ success: false, error: 'Invalid OTP code' });
+        }
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+//Profile setup route
+app.post('/api/user/setup-profile', async (req: Request, res: Response): Promise<void> => {
+    const { phone, displayName, bio, avatarColor, avatarUrl } = req.body;
+    
+    try {
+        const user = await prisma.user.upsert({
+            where: { phone },
+            update: {
+                displayName,
+                bio,
+                avatarColor,
+                avatarUrl
+            },
+            create: {
+                phone,
+                displayName,
+                bio,
+                avatarColor,
+                avatarUrl
+            }
+        });
+
+        res.status(200).json({
+            success: true,
+            user
+        });
+    } catch (error: any) {
+        console.error("Profile Setup Error: ", error);
+        res.status(500).json({
+            success: false,
+            error: error.message || 'Failed to save profile'
+        });
+    }
+});
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

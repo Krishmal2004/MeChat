@@ -1,11 +1,3 @@
-/**
- * ProfileSetup.tsx — MeChat Onboarding
- *
- * Step 1 : Country picker  + phone number
- * Step 2 : OTP verification (6 digits, auto-advance)
- * Step 3 : Display name
- * Step 4 : Bio + profile picture
- */
 import React, { useRef, useState, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -28,16 +20,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 
-// ──────────────────────────────────────────────────────────────────────────────
-// API Configuration
-// ──────────────────────────────────────────────────────────────────────────────
-// If testing on Android Emulator, use 10.0.2.2. For iOS/Web use localhost.
-// For physical device, use your computer's local IP address (e.g. 192.168.1.10)
 const API_BASE_URL = 'http://10.0.2.2:3000/api';
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Country data
-// ──────────────────────────────────────────────────────────────────────────────
 interface Country {
   name: string;
   flag: string;
@@ -112,9 +96,6 @@ const COUNTRIES: Country[] = [
   { name: 'Zimbabwe', flag: '🇿🇼', code: '+263', iso: 'ZW' },
 ];
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Main Component
-// ──────────────────────────────────────────────────────────────────────────────
 const ProfileSetup: React.FC<{ navigation?: any }> = ({ navigation }) => {
   // Use responsive dimensions hook
   const { width, height } = useWindowDimensions();
@@ -148,33 +129,28 @@ const ProfileSetup: React.FC<{ navigation?: any }> = ({ navigation }) => {
     });
   };
 
-  // ── Step 1 state
+  
   const [selectedCountry, setSelectedCountry] = useState<Country>(COUNTRIES[60]); // USA
   const [phone, setPhone] = useState('');
   const [countrySearch, setCountrySearch] = useState('');
   const [countryModalVisible, setCountryModalVisible] = useState(false);
 
-  // ── Step 2 state
   const OTP_LENGTH = 6;
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const otpRefs = useRef<Array<TextInput | null>>(Array(OTP_LENGTH).fill(null));
   const [otpError, setOtpError] = useState('');
   const [otpVerified, setOtpVerified] = useState(false);
 
-  // ── Step 3 state
   const [displayName, setDisplayName] = useState('');
 
-  // ── Step 4 state
   const [bio, setBio] = useState('');
   const [avatar, setAvatar] = useState<string | null>(null);
 
-  // ── filtered countries
   const filteredCountries = COUNTRIES.filter(c =>
     c.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
     c.code.includes(countrySearch),
   );
 
-  // Reusable Progress Dots inside component to access dynamic styles
   const ProgressDots: React.FC<{ total: number; current: number }> = ({ total, current }) => (
     <View style={styles.progressDots}>
       {Array.from({ length: total }).map((_, i) => (
@@ -186,10 +162,6 @@ const ProfileSetup: React.FC<{ navigation?: any }> = ({ navigation }) => {
     </View>
   );
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // API Methods
-  // ─────────────────────────────────────────────────────────────────────────��
-  
   const handleSendOtp = async () => {
     setIsLoading(true);
     const fullPhone = `${selectedCountry.code}${phone}`;
@@ -273,9 +245,6 @@ const ProfileSetup: React.FC<{ navigation?: any }> = ({ navigation }) => {
     }
   };
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // Render Steps
-  // ──────────────────────────────────────────────────────────────────────────
   const renderStep1 = () => (
     <View style={styles.stepContainer}>
       <Text style={styles.stepEmoji}>📱</Text>
@@ -619,9 +588,6 @@ const ProfileSetup: React.FC<{ navigation?: any }> = ({ navigation }) => {
   );
 };
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Dynamic Styles
-// ──────────────────────────────────────────────────────────────────────────────
 const makeStyles = (width: number, height: number) => {
   // Use max dimension to ensure background circles stay perfectly round upon rotation
   const maxDim = Math.max(width, height);
@@ -856,7 +822,7 @@ const makeStyles = (width: number, height: number) => {
       shadowRadius: 12,
       elevation: 8,
       marginBottom: 16,
-      height: 56, // Added fixed height to stop the button from shifting during the loading spinner
+      height: 56, 
     },
     nextBtnDisabled: {
       backgroundColor: '#1a4033',
@@ -898,7 +864,7 @@ const makeStyles = (width: number, height: number) => {
       color: '#ffffff',
       fontSize: 22,
       fontWeight: '700',
-      maxWidth: 60, // Ensure it doesn't stretch too much on tablets
+      maxWidth: 60, 
     },
     otpBoxFilled: {
       borderColor: '#25D366',

@@ -1,14 +1,3 @@
-/**
- * MainDashboard.tsx — MeChat
- *
- * WhatsApp-style chat list screen with:
- * - Header (menu, title, camera, new-chat)
- * - Search bar
- * - Filter chips (All / Unread / Favourites / Groups)
- * - Archived row
- * - Scrollable chat list (pinned, unread badges, avatars)
- * - Bottom tab bar (Updates • Calls • Communities • Chats • You)
- */
 import React, { useState, useMemo } from 'react';
 import {
   FlatList,
@@ -24,10 +13,6 @@ import {
 } from 'react-native';
 
 import ProfileSettings from './ProfileSettings';
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Types & sample data
-// ──────────────────────────────────────────────────────────────────────────────
 interface ChatItem {
   id: string;
   name: string;
@@ -38,11 +23,11 @@ interface ChatItem {
   isGroup?: boolean;
   avatarColor?: string;
   avatarInitial: string;
-  senderName?: string; // for group chats
+  senderName?: string; 
   hasMedia?: boolean;
   isOnline?: boolean;
   isMuted?: boolean;
-  isRead?: boolean; // double-tick read indicator
+  isRead?: boolean; 
 }
 
 const ALL_CHATS: ChatItem[] = [
@@ -172,12 +157,6 @@ const ALL_CHATS: ChatItem[] = [
     unread: 5,
   },
 ];
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Sub-components
-// ──────────────────────────────────────────────────────────────────────────────
-
-// Avatar circle
 const Avatar: React.FC<{
   initial: string;
   color: string;
@@ -223,16 +202,12 @@ const Avatar: React.FC<{
   </View>
 );
 
-// Double tick indicator
 const ReadTick: React.FC<{ isRead?: boolean }> = ({ isRead }) => (
   <Text style={{ color: isRead ? '#34B7F1' : '#7aada0', fontSize: 13, marginRight: 3 }}>
     {isRead ? '✓✓' : '✓'}
   </Text>
 );
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Main Component
-// ──────────────────────────────────────────────────────────────────────────────
 const MainDashboard: React.FC<{ navigation?: any }> = ({ navigation }) => {
   const { width, height } = useWindowDimensions();
   const styles = useMemo(() => makeStyles(width, height), [width, height]);
@@ -241,7 +216,6 @@ const MainDashboard: React.FC<{ navigation?: any }> = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'Updates' | 'Calls' | 'Communities' | 'Chats' | 'You'>('Chats');
 
-  // Filter chats
   const filteredChats = useMemo(() => {
     let list = ALL_CHATS;
     if (searchQuery.trim()) {
@@ -259,7 +233,6 @@ const MainDashboard: React.FC<{ navigation?: any }> = ({ navigation }) => {
 
   const totalUnread = ALL_CHATS.reduce((s, c) => s + (c.unread ?? 0), 0);
 
-  // ── Chat row
   const renderChat = ({ item }: { item: ChatItem }) => (
     <TouchableOpacity
       style={styles.chatRow}
@@ -320,7 +293,6 @@ const MainDashboard: React.FC<{ navigation?: any }> = ({ navigation }) => {
     </TouchableOpacity>
   );
 
-  // ── List header (search + filters + archived)
   const ListHeader = () => (
     <>
       {/* Search */}
@@ -474,20 +446,17 @@ const MainDashboard: React.FC<{ navigation?: any }> = ({ navigation }) => {
   );
 };
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Dynamic Styles
-// ──────────────────────────────────────────────────────────────────────────────
 const makeStyles = (width: number, height: number) =>
   StyleSheet.create({
     root: {
       flex: 1,
       backgroundColor: '#0d110f',
-      alignItems: 'center', // Centers the responsive wrapper on large screens
+      alignItems: 'center', 
     },
     responsiveContainer: {
       flex: 1,
       width: '100%',
-      maxWidth: 600, // Look and feel bounds for Web/Tablets
+      maxWidth: 600, 
       backgroundColor: '#0d110f',
       position: 'relative',
     },

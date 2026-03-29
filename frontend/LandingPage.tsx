@@ -12,7 +12,6 @@ import {
 
 const { width, height } = Dimensions.get('window');
 
-// ─── Floating Bubble Component ────────────────────────────────────────────────
 interface BubbleProps {
   size: number;
   startX: number;
@@ -85,7 +84,6 @@ const FloatingBubble: React.FC<BubbleProps> = ({
   );
 };
 
-// ─── Main Landing Page ─────────────────────────────────────────────────────────
 const LandingPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
   const [loadingDone, setLoadingDone] = useState(false);
 
@@ -353,7 +351,6 @@ const LandingPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
   );
 };
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -540,7 +537,6 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 40,
     minWidth: width * 0.7,
-    // marginTop: height * 0.06, <--- REMOVED (moved to Animated parent wrapper)
     shadowColor: '#25D366',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.5,

@@ -113,7 +113,6 @@ const ChatScreen = () => {
       if (!data.success) {
         console.warn('Message send failed', data.error);
       } else {
-        // Optionally refresh messages from server to sync DB IDs
         fetchMessages(myPhone, receiverPhone);
       }
     } catch (error) {
@@ -142,8 +141,7 @@ const ChatScreen = () => {
 
   return (
     <SafeAreaView style={styles.root}>
-      {/* Hide default status bar background so it blends with our custom header */}
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <StatusBar barStyle="light-content" backgroundColor="#202c33" />
       
       <View style={styles.responsiveContainer}>
         {/* HEADER */}
@@ -173,6 +171,7 @@ const ChatScreen = () => {
         <KeyboardAvoidingView 
           style={{ flex: 1 }} 
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >
           <View style={styles.chatBackground}>
             {isLoading ? (
@@ -234,183 +233,184 @@ const ChatScreen = () => {
   );
 };
 
-// Use a function to dynamically generate styles based on screen dimensions
-const makeStyles = (width: number, height: number) => StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: '#0b141a',
-    alignItems: 'center', // Centers the responsive container on wide screens
-  },
-  responsiveContainer: {
-    flex: 1,
-    width: '100%',
-    maxWidth: 600, // Prevents the chat from stretching too wide on tablets/web
-    backgroundColor: '#0b141a',
-    position: 'relative',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#202c33',
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#111b21',
-    // Dynamically add padding based on the phone's actual status bar height
-    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 10 : Platform.OS === 'ios' ? 50 : 20,
-  },
-  backBtn: {
-    padding: 10,
-    marginRight: 4,
-  },
-  backIcon: {
-    color: '#fff',
-    fontSize: 28,
-    lineHeight: 28,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12, // Increased slightly for breathing room
-  },
-  avatarText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 18,
-  },
-  onlineDot: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#25D366',
-    borderWidth: 1,
-    borderColor: '#202c33',
-  },
-  headerInfo: {
-    flex: 1,
-  },
-  headerName: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  headerStatus: {
-    color: '#8696a0',
-    fontSize: 12,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    gap: 16,
-    paddingRight: 10,
-  },
-  headerActionIcon: {
-    color: '#fff',
-    fontSize: 20,
-  },
-  chatBackground: {
-    flex: 1,
-    backgroundColor: '#0b141a',
-  },
-  listContent: {
-    padding: 16,
-    paddingBottom: 20,
-  },
-  emptyState: {
-    alignItems: 'center',
-    marginTop: 20,
-    backgroundColor: '#182229',
-    padding: 12,
-    borderRadius: 8,
-    alignSelf: 'center',
-    maxWidth: '85%', // Prevent wide stretching
-  },
-  emptyNotice: {
-    color: '#ffd279',
-    fontSize: 12,
-    textAlign: 'center',
-  },
-  messageBubble: {
-    // Make sure bubble doesn't look absurdly long on tablets
-    maxWidth: Math.min(width * 0.8, 450), 
-    padding: 10,
-    borderRadius: 12,
-    marginBottom: 8,
-  },
-  messageMine: {
-    alignSelf: 'flex-end',
-    backgroundColor: '#005c4b',
-    borderTopRightRadius: 4,
-  },
-  messageTheirs: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#202c33',
-    borderTopLeftRadius: 4,
-  },
-  messageText: {
-    color: '#e9edef',
-    fontSize: 15,
-    marginBottom: 16, 
-  },
-  messageTime: {
-    color: '#8696a0',
-    fontSize: 10,
-    position: 'absolute',
-    bottom: 4,
-    right: 8,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    padding: 8,
-    paddingBottom: Platform.OS === 'ios' ? 24 : 8,
-    backgroundColor: '#0b141a',
-  },
-  inputWrapper: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    backgroundColor: '#202c33',
-    borderRadius: 24,
-    marginRight: 8,
-    paddingHorizontal: 4,
-    minHeight: 44, // Align with send button height
-  },
-  iconButton: {
-    padding: 10,
-    paddingBottom: 12, // Keeps icons aligned with the bottom of the multi-line text input
-  },
-  inputIcon: {
-    color: '#8696a0',
-    fontSize: 22,
-  },
-  textInput: {
-    flex: 1,
-    color: '#fff',
-    fontSize: 16,
-    maxHeight: 120,
-    minHeight: 40,
-    paddingTop: Platform.OS === 'ios' ? 12 : 10,
-    paddingBottom: Platform.OS === 'ios' ? 12 : 10,
-  },
-  sendButton: {
-    backgroundColor: '#00a884',
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sendIcon: {
-    color: '#fff',
-    fontSize: 18,
-    marginLeft: 2, // Slight visual adjustment for the send arrow
-  },
-});
+// Hoisted function to ensure styles load correctly without ReferenceErrors in useMemo
+function makeStyles(width: number, height: number) {
+  return StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: '#0b141a',
+      alignItems: 'center',
+    },
+    responsiveContainer: {
+      flex: 1,
+      width: '100%',
+      maxWidth: 800, 
+      backgroundColor: '#0b141a',
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#202c33',
+      paddingVertical: 10,
+      paddingHorizontal: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: '#111b21',
+      paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 10 : 10,
+    },
+    backBtn: {
+      padding: 10,
+      marginRight: 4,
+    },
+    backIcon: {
+      color: '#fff',
+      fontSize: 28,
+      lineHeight: 28,
+    },
+    avatar: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+    },
+    avatarText: {
+      color: '#fff',
+      fontWeight: '700',
+      fontSize: 18,
+    },
+    onlineDot: {
+      position: 'absolute',
+      bottom: 0,
+      right: 0,
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: '#25D366',
+      borderWidth: 1,
+      borderColor: '#202c33',
+    },
+    headerInfo: {
+      flex: 1,
+    },
+    headerName: {
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    headerStatus: {
+      color: '#8696a0',
+      fontSize: 12,
+    },
+    headerActions: {
+      flexDirection: 'row',
+      gap: 16,
+      paddingRight: 10,
+    },
+    headerActionIcon: {
+      color: '#fff',
+      fontSize: 20,
+    },
+    chatBackground: {
+      flex: 1,
+      backgroundColor: '#0b141a',
+    },
+    listContent: {
+      padding: 16,
+      paddingBottom: 20,
+    },
+    emptyState: {
+      alignItems: 'center',
+      marginTop: 20,
+      backgroundColor: '#182229',
+      padding: 12,
+      borderRadius: 8,
+      alignSelf: 'center',
+      maxWidth: '85%',
+    },
+    emptyNotice: {
+      color: '#ffd279',
+      fontSize: 12,
+      textAlign: 'center',
+    },
+    messageBubble: {
+      maxWidth: width > 600 ? 500 : width * 0.8, // Responsively caps wide bubbles
+      paddingTop: 8,
+      paddingBottom: 4, // Tight padding to accommodate the flex layout
+      paddingHorizontal: 12,
+      borderRadius: 12,
+      marginBottom: 8,
+      // Removed position: relative
+    },
+    messageMine: {
+      alignSelf: 'flex-end',
+      backgroundColor: '#005c4b',
+      borderTopRightRadius: 4,
+    },
+    messageTheirs: {
+      alignSelf: 'flex-start',
+      backgroundColor: '#202c33',
+      borderTopLeftRadius: 4,
+    },
+    messageText: {
+      color: '#e9edef',
+      fontSize: 15,
+      lineHeight: 20,
+    },
+    messageTime: {
+      color: '#8696a0',
+      fontSize: 10,
+      alignSelf: 'flex-end', // Aligns the time to the right dynamically
+      marginTop: 2, // Adds a tiny gap between text and time
+      // Removed absolute positioning
+    },
+    inputContainer: {
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      padding: 8,
+      backgroundColor: '#0b141a',
+    },
+    inputWrapper: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      backgroundColor: '#202c33',
+      borderRadius: 24,
+      marginRight: 8,
+      paddingHorizontal: 4,
+      minHeight: 44,
+    },
+    iconButton: {
+      padding: 10,
+      paddingBottom: 12,
+    },
+    inputIcon: {
+      color: '#8696a0',
+      fontSize: 22,
+    },
+    textInput: {
+      flex: 1,
+      color: '#fff',
+      fontSize: 16,
+      maxHeight: 120,
+      minHeight: 40,
+      paddingTop: Platform.OS === 'ios' ? 12 : 10,
+      paddingBottom: Platform.OS === 'ios' ? 12 : 10,
+    },
+    sendButton: {
+      backgroundColor: '#00a884',
+      width: 46,
+      height: 46,
+      borderRadius: 23,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    sendIcon: {
+      color: '#fff',
+      fontSize: 18,
+      marginLeft: 2,
+    },
+  });
+}
 
 export default ChatScreen;

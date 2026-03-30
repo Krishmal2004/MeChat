@@ -15,6 +15,8 @@ import {
 } from 'react-native';
 
 import ProfileSettings from './ProfileSettings';
+import UpdatesScreen from './update';
+import CallsScreen from './Call';
 
 interface ChatItem {
   id: string;
@@ -325,6 +327,12 @@ const MainDashboard: React.FC<{ navigation?: any }> = ({ navigation }) => {
                 <Text style={styles.newChatIcon}>＋</Text>
               </TouchableOpacity>
             </View>
+          ) : activeTab === 'Calls' ? (
+            <View style={[styles.headerActions, { justifyContent: 'flex-end', width: 86 }]}>
+              <TouchableOpacity style={[styles.newChatBtn, { backgroundColor: '#25D366' }]}>
+                <Text style={styles.newChatIcon}>＋</Text>
+              </TouchableOpacity>
+            </View>
           ) : (
             <View style={{ width: 86 }} />
           )}
@@ -361,7 +369,19 @@ const MainDashboard: React.FC<{ navigation?: any }> = ({ navigation }) => {
           </View>
         )}
 
-        {activeTab !== 'Chats' && activeTab !== 'You' && (
+        {activeTab === 'Updates' && (
+          <View style={{ flex: 1 }}>
+            <UpdatesScreen />
+          </View>
+        )}
+
+        {activeTab === 'Calls' && (
+          <View style={{ flex: 1 }}>
+            <CallsScreen />
+          </View>
+        )}
+
+        {activeTab !== 'Chats' && activeTab !== 'You' && activeTab !== 'Updates' && activeTab !== 'Calls' && (
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
             <Text style={{ color: '#d0ede6', fontSize: 18, fontWeight: '600' }}>{activeTab} coming soon...</Text>
           </View>

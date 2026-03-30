@@ -19,27 +19,23 @@ const App = () => {
   useEffect(() => {
     const checkLoginStatus = async () => {
       try {
-        // Check if the user has a saved token/profile locally
         const userToken = await AsyncStorage.getItem('userToken');
         
         if (userToken) {
-          // If token exists, skip to Home (MainDashboard)
           setInitialRoute('Home');
         } else {
-          // Otherwise, start at the Landing Page
           setInitialRoute('Landing');
         }
       } catch (error) {
         console.error('Failed to check user token', error);
       } finally {
-        setIsLoading(false); // Stop the loading spinner
+        setIsLoading(false); 
       }
     };
 
     checkLoginStatus();
   }, []);
 
-  // Show a dark loading screen with a green spinner while checking storage
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>

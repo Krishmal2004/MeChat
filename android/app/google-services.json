@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "635528490763",
+    "project_id": "mechat-fdce5",
+    "storage_bucket": "mechat-fdce5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:635528490763:android:ba544ca96ee197e26d7c0e",
+        "android_client_info": {
+          "package_name": "com.mechat"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAjKLazYHLO2rw3nC_WsdVntcfkx5bItmk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

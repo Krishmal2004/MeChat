@@ -9,7 +9,7 @@ import LandingPage from './frontend/LandingPage';
 import ProfileSetup from './frontend/ProfileSetup';
 import MainDashboard from './frontend/MainDashboard';
 import ChatScreen from './frontend/ChatScreen';
-
+import CallsScreen from './frontend/Call'; 
 const Stack = createNativeStackNavigator();
 
 const App = () => {
@@ -65,6 +65,11 @@ const App = () => {
         <Stack.Screen
           name="ChatScreen"
           component={ChatScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="CallsScreen"
+          component={CallsScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

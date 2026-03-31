@@ -161,7 +161,9 @@ const ChatScreen = () => {
           </View>
 
           <View style={styles.headerActions}>
-            <TouchableOpacity><Text style={styles.headerActionIcon}>📞</Text></TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('CallsScreen', { makeCallTo: receiverPhone })}>
+              <Text style={styles.headerActionIcon}>📞</Text>
+            </TouchableOpacity>
             <TouchableOpacity><Text style={styles.headerActionIcon}>📹</Text></TouchableOpacity>
             <TouchableOpacity><Text style={styles.headerActionIcon}>⋮</Text></TouchableOpacity>
           </View>
@@ -334,13 +336,12 @@ function makeStyles(width: number, height: number) {
       textAlign: 'center',
     },
     messageBubble: {
-      maxWidth: width > 600 ? 500 : width * 0.8, // Responsively caps wide bubbles
+      maxWidth: width > 600 ? 500 : width * 0.8,
       paddingTop: 8,
-      paddingBottom: 4, // Tight padding to accommodate the flex layout
+      paddingBottom: 4, 
       paddingHorizontal: 12,
       borderRadius: 12,
       marginBottom: 8,
-      // Removed position: relative
     },
     messageMine: {
       alignSelf: 'flex-end',
@@ -360,9 +361,8 @@ function makeStyles(width: number, height: number) {
     messageTime: {
       color: '#8696a0',
       fontSize: 10,
-      alignSelf: 'flex-end', // Aligns the time to the right dynamically
-      marginTop: 2, // Adds a tiny gap between text and time
-      // Removed absolute positioning
+      alignSelf: 'flex-end', 
+      marginTop: 2, 
     },
     inputContainer: {
       flexDirection: 'row',

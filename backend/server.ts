@@ -7,6 +7,7 @@ import { prisma } from './db.js';
 import profileSettingRoute from './profileSetting.js';
 import authRoutes from './authRoutes.js';
 import messageRoutes from './messageRoutes.js';
+import callRoutes from './call.js';
 
 dotenv.config();
 
@@ -19,6 +20,7 @@ app.use(cors());
 app.use('/api', profileSettingRoute);
 app.use('/api', authRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/calls', callRoutes);
 
 // Twilio configuration
 const twilioClient = twilio(

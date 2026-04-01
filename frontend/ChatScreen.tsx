@@ -161,7 +161,7 @@ const ChatScreen = () => {
           </View>
 
           <View style={styles.headerActions}>
-            <TouchableOpacity onPress={() => navigation.navigate('CallsScreen', { makeCallTo: receiverPhone })}>
+            <TouchableOpacity onPress={() => navigation.navigate('MakeCallScreen', { makeCallTo: receiverPhone })}>
               <Text style={styles.headerActionIcon}>📞</Text>
             </TouchableOpacity>
             <TouchableOpacity><Text style={styles.headerActionIcon}>📹</Text></TouchableOpacity>

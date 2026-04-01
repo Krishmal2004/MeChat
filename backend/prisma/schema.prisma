@@ -1,35 +1,51 @@
 generator client {
   provider = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
-  provider = "postgresql" 
+  provider = "postgresql"
 }
 
 model User {
-  id               Int       @id @default(autoincrement())
-  phone            String    @unique
-  displayName      String?
-  bio              String?
-  avatarColor      String?
-  avatarUrl        String?
-  
+  id          Int     @id @default(autoincrement())
+  phone       String  @unique
+  displayName String?
+  bio         String?
+  avatarColor String?
+  avatarUrl   String?
+
   sentMessages     Message[] @relation("SentMessages")
   receivedMessages Message[] @relation("ReceivedMessages")
+
+  madeCalls     CallLog[] @relation("MadeCalls")
+  receivedCalls CallLog[] @relation("ReceivedCalls")
 }
 
 model Message {
-  id             Int      @id @default(autoincrement())
-  content        String
-  createdAt      DateTime @default(now())
-  isRead         Boolean  @default(false)
+  id        Int      @id @default(autoincrement())
+  content   String
+  createdAt DateTime @default(now())
+  isRead    Boolean  @default(false)
 
   // Link to the sender
-  senderPhone    String
-  sender         User     @relation("SentMessages", fields: [senderPhone], references: [phone])
+  senderPhone String
+  sender      User   @relation("SentMessages", fields: [senderPhone], references: [phone])
 
   // Link to the receiver
-  receiverPhone  String
-  receiver       User     @relation("ReceivedMessages", fields: [receiverPhone], references: [phone])
+  receiverPhone String
+  receiver      User   @relation("ReceivedMessages", fields: [receiverPhone], references: [phone])
+}
+
+model CallLog {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  callerPhone String
+  caller      User   @relation("MadeCalls", fields: [callerPhone], references: [phone])
+
+  receiverPhone String
+  receiver      User   @relation("ReceivedCalls", fields: [receiverPhone], references: [phone])
+
+  status   String @default("completed") // e.g., "completed", "missed", "rejected"
+  duration Int    @default(0) // duration in seconds
 }

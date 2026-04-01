@@ -80,15 +80,29 @@ router.get('/chats/:phone', async (req: Request, res: Response): Promise<void> =
         res.status(500).json({ success: false, error: error.message || 'Failed to fetch chats' });
     }
 });
+
 // Get chat in screen
 router.get('/:sender/:receiver', async (req: Request, res: Response): Promise<void> => {
     const { sender, receiver } = req.params;
     try {
+        // --- FIX: Mark messages as read when the chat is opened ---
+        await prisma.message.updateMany({
+            where: {
+                senderPhone: receiver,
+                receiverPhone: sender,
+                isRead: false
+            },
+            data: {
+                isRead: true
+            }
+        });
+
         const messages = await prisma.message.findMany({
             where: {
                 OR: [
                     { senderPhone: sender, receiverPhone: receiver },
-                    { senderPhone: receiver, receiverPhone: sender }]
+                    { senderPhone: receiver, receiverPhone: sender }
+                ]
             },
             orderBy: {
                 createdAt: 'asc'

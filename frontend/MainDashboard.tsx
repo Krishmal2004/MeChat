@@ -122,10 +122,14 @@ const MainDashboard: React.FC<{ navigation?: any }> = ({ navigation }) => {
     }
   };
 
-  // Fetch chats on initial load
+  // --- FIX: Ensure chats are refetched (clearing the unread badge) whenever navigating back to the Dashboard ---
   useEffect(() => {
+    const unsubscribe = navigation?.addListener('focus', () => {
+      fetchChats();
+    });
     fetchChats();
-  }, []);
+    return unsubscribe;
+  }, [navigation]);
 
   const handleSendMessage = async () => {
     if (!newChatPhone.trim() || !newChatMessage.trim()) {

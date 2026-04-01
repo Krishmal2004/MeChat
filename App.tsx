@@ -10,6 +10,7 @@ import ProfileSetup from './frontend/ProfileSetup';
 import MainDashboard from './frontend/MainDashboard';
 import ChatScreen from './frontend/ChatScreen';
 import CallsScreen from './frontend/Call'; 
+import MakeCallScreen from './frontend/MakeCall';
 const Stack = createNativeStackNavigator();
 
 const App = () => {
@@ -70,6 +71,11 @@ const App = () => {
         <Stack.Screen
           name="CallsScreen"
           component={CallsScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="MakeCallScreen"
+          component={MakeCallScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

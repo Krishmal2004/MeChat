@@ -220,7 +220,7 @@ const ChatScreen = () => {
 
           <View style={styles.headerInfo}>
             <Text style={styles.headerName} numberOfLines={1}>{name || receiverPhone}</Text>
-            <Text style={styles.headerStatus}>{isOnline ? 'Online' : 'Loading...'}</Text>
+            <Text style={styles.headerStatus}>{isOnline ? 'Online' : receiverPhone}</Text>
           </View>
 
           <View style={styles.headerActions}>

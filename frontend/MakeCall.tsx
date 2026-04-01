@@ -27,7 +27,7 @@ const MakeCallScreen = () => {
   const [fetchedName, setFetchedName] = useState(name);
   const [fetchedAvatar, setFetchedAvatar] = useState(avatarURI);
 
-  const displayTitle = fetchedName || targetUserId || 'Unknown';
+  const displayTitle = fetchedName || targetUserId || 'Unknown Contact';
 
   const [activeCall, setActiveCall] = useState<any>(null);
   const [callStatus, setCallStatus] = useState(isIncoming ? 'Incoming...' : 'Starting...');
@@ -35,6 +35,19 @@ const MakeCallScreen = () => {
   const [isSpeaker, setIsSpeaker] = useState(false);
   
   const startTimeRef = useRef<number | null>(null);
+
+  // Safely attempt to disconnect an active call without throwing Promise UUID error
+  const safeDisconnect = (callObject: any) => {
+    if (!callObject) return;
+    try {
+      const p = callObject.disconnect();
+      if (p && typeof p.catch === 'function') {
+        p.catch((err: any) => console.log('Safely caught disconnect error:', err));
+      }
+    } catch (error) {
+      console.log('Caught synchronous disconnect error:', error);
+    }
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -140,12 +153,16 @@ const MakeCallScreen = () => {
     startCall();
 
     return () => {
-      if (currentCall) currentCall.disconnect();
+      // --- FIX: Safely attempt disconnect avoiding UUID errors ---
+      if (currentCall) safeDisconnect(currentCall);
     };
   }, [twilioToken, targetUserId, isIncoming, navigation]);
 
   const handleHangUp = () => {
-    if (activeCall) activeCall.disconnect();
+    if (activeCall) {
+       // --- FIX: Safely attempt disconnect avoiding UUID errors ---
+       safeDisconnect(activeCall);
+    }
     if (callStatus === 'Calling...' || callStatus === 'Incoming...') {
        saveCallLog('missed'); 
     }
@@ -162,7 +179,7 @@ const MakeCallScreen = () => {
 
   const toggleSpeaker = () => setIsSpeaker(!isSpeaker);
 
-  const avatarSize = Math.min(width * 0.45, 180);
+  const avatarSize = Math.min(width * 0.45, 200);
 
   return (
     <View style={styles.container}>
@@ -189,10 +206,10 @@ const MakeCallScreen = () => {
         <View style={styles.avatarWrapper}>
           <View style={[styles.avatar, { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }]}>
             {fetchedAvatar ? (
-              <Image source={{ uri: fetchedAvatar }} style={{ width: '100%', height: '100%', borderRadius: avatarSize / 2 }} />
+              <Image source={{ uri: fetchedAvatar }} style={{ width: '100%', height: '100%' }} />
             ) : (
               <Text style={{ fontSize: avatarSize * 0.4, color: '#25D366', fontWeight: 'bold' }}>
-                {displayTitle !== 'Unknown' && displayTitle.length > 0 ? displayTitle.charAt(0).toUpperCase() : '👤'}
+                {displayTitle !== 'Unknown Contact' ? displayTitle.charAt(0).toUpperCase() : '👤'}
               </Text>
             )}
           </View>
@@ -236,13 +253,13 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 600,
     alignSelf: 'center',
-    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 50,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 50,
     zIndex: 10,
   },
   iconButton: {
@@ -261,6 +278,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1a2e25',
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden', 
   },
   bottomControlsContainer: {
     paddingHorizontal: 20,

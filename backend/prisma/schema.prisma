@@ -19,6 +19,9 @@ model User {
 
   madeCalls     CallLog[] @relation("MadeCalls")
   receivedCalls CallLog[] @relation("ReceivedCalls")
+
+  // Add this line to fix the error!
+  statuses      Status[]  @relation("UserStatuses")
 }
 
 model Message {
@@ -48,4 +51,15 @@ model CallLog {
 
   status   String @default("completed") // e.g., "completed", "missed", "rejected"
   duration Int    @default(0) // duration in seconds
+}
+
+model Status {
+  id          Int      @id @default(autoincrement())
+  mediaUrl    String?  
+  content     String?  
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime 
+  
+  authorPhone String
+  author      User     @relation("UserStatuses", fields: [authorPhone], references: [phone])
 }

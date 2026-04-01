@@ -394,7 +394,6 @@ const MainDashboard: React.FC<{ navigation?: any }> = ({ navigation }) => {
         <View style={styles.tabBar}>
           <TabItem label="Updates" icon="🔔" />
           <TabItem label="Calls" icon="📞" />
-          <TabItem label="Communities" icon="👥" />
           <TabItem label="Chats" icon="💬" badge={totalUnread} />
           <TabItem label="You" icon="🧑" />
         </View>
